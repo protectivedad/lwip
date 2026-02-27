@@ -200,9 +200,9 @@ static void tcp_ext_arg_invoke_callbacks_destroyed(struct tcp_pcb_ext_args *ext_
 void
 tcp_init(void)
 {
-#ifdef LWIP_RAND
+#if LWIP_RANDOMIZE_INITIAL_LOCAL_PORTS && defined(LWIP_RAND)
   tcp_port = TCP_ENSURE_LOCAL_PORT_RANGE(LWIP_RAND());
-#endif /* LWIP_RAND */
+#endif /* LWIP_RANDOMIZE_INITIAL_LOCAL_PORTS && defined(LWIP_RAND) */
 }
 
 /** Free a tcp pcb */
@@ -1034,6 +1034,25 @@ again:
   }
   return tcp_port;
 }
+
+//Realtek add start
+#if LWIP_RANDOMIZE_INITIAL_LOCAL_PORTS
+/**
+ * Randomize a new local TCP port once.
+ */
+void 
+tcp_randomize_local_port(void)
+{
+  static int done = 0;
+
+  if (!done) {
+    done = 1;    
+    LWIP_SRAND();
+    tcp_port = LWIP_RAND() % (TCP_LOCAL_PORT_RANGE_END - TCP_LOCAL_PORT_RANGE_START) + TCP_LOCAL_PORT_RANGE_START;
+  }
+}
+#endif  /* LWIP_RANDOMIZE_INITIAL_LOCAL_PORTS */
+//Realtek add end
 
 /**
  * @ingroup tcp_raw
