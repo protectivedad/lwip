@@ -537,6 +537,20 @@ alloc_socket(struct netconn *newconn, int accepted)
   return -1;
 }
 
+int LWIP_GetMaxSockets() {
+    return NUM_SOCKETS;
+}
+int LWIP_GetActiveSockets() {
+    int i;
+    int r=0;
+    for (i = 0; i < NUM_SOCKETS; ++i) {
+        if (sockets[i].conn) {
+            r++;
+        }
+    }
+    return r;
+}
+
 /** Free a socket (under lock)
  *
  * @param sock the socket to free
@@ -805,6 +819,51 @@ lwip_close(int s)
 
   free_socket(sock, is_tcp);
   set_errno(0);
+  return 0;
+}
+
+// same as above but without SOCK_DEINIT_SYNC check
+// There is a bug in our htttp client and this is a temporary work around for that
+// Otherwise, it leaves sockets unfried and they adds up to 38 and block all networking
+int lwip_close_force(int s)
+{
+  struct lwip_sock *sock;
+  int is_tcp = 0;
+  err_t err;
+
+  LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_close(%d)\n", s));
+
+ // mylog12("lwip_close: called");
+  sock = get_socket(s);
+  if (!sock) {
+     // mylog12("lwip_close: get_socket ret 0");
+    return -1;
+  }
+ // mylog12("before deinit");
+ // SOCK_DEINIT_SYNC(sock);
+ // mylog12("after deinit");
+
+  if (sock->conn != NULL) {
+    is_tcp = NETCONNTYPE_GROUP(netconn_type(sock->conn)) == NETCONN_TCP;
+  } else {
+    LWIP_ASSERT("sock->lastdata == NULL", sock->lastdata.netbuf == NULL);
+  }
+
+#if LWIP_IGMP
+  /* drop all possibly joined IGMP memberships */
+  lwip_socket_drop_registered_memberships(s);
+#endif /* LWIP_IGMP */
+
+  err = netconn_delete(sock->conn);
+  if (err != ERR_OK) {
+    //  mylog12("lwip_close: netcon delete failed");
+    sock_set_errno(sock, err_to_errno(err));
+    return -1;
+  }
+
+  free_socket(sock, is_tcp);
+  set_errno(0);
+    //  mylog12("lwip_close: ok");
   return 0;
 }
 
@@ -3983,77 +4042,6 @@ lwip_inet_pton(int af, const char *src, void *dst)
   }
   return err;
 }
-
-/**************************************************************
-*                           Added  by Realtek       Begin                     *
-**************************************************************/
-int lwip_allocsocketsd()
-{
-  struct netconn *conn;
-  int i;
-  
-  /*new a netconn due to avoid some socket->conn check*/
-  conn = netconn_new_with_proto_and_callback(NETCONN_RAW, 0, NULL);
-  if (!conn) {
-    printf("\r\n could not create netconn");
-    return -1;
-  }
-  
-  /*alloc a socket*/
-  i = alloc_socket(conn, 1);
-  if (i == -1) {
-    netconn_delete(conn);
-    printf("\r\n alloc socket fail!");
-    return -1;
-  }
-  
-  conn->socket = i;
-  return i;
-}
-void lwip_setsockrcvevent(int fd, int rcvevent)
-{
-	struct lwip_sock *sock = get_socket(fd);
-
-	if(sock){
-		if(rcvevent)
-			sock->rcvevent = 1;
-		else
-			sock->rcvevent = 0;
-	}
-}
-void lwip_selectevindicate(int fd)
-{
-  struct lwip_select_cb *scb;
-  struct lwip_sock *sock;
-  
-  sock = get_socket(fd);
-  SYS_ARCH_DECL_PROTECT(lev);
-  while (1) {
-    SYS_ARCH_PROTECT(lev);
-    for (scb = select_cb_list; scb; scb = scb->next) {
-      if (scb->sem_signalled == 0) {
-        /* Test this select call for our socket */
-        if (scb->readset && FD_ISSET(fd, scb->readset))
-          if (sock->rcvevent > 0)
-            break;
-        if (scb->writeset && FD_ISSET(fd, scb->writeset))
-          if (sock->sendevent)
-            break;
-      }
-    }
-    if (scb) {
-      scb->sem_signalled = 1;
-      sys_sem_signal(&scb->sem);
-      SYS_ARCH_UNPROTECT(lev);
-    } else {
-      SYS_ARCH_UNPROTECT(lev);
-      break;
-    }
-  }
-}
-/**************************************************************
-*                           Added  by Realtek        end                    *
-**************************************************************/
 
 #if LWIP_IGMP
 /** Register a new IGMP membership. On socket close, the membership is dropped automatically.
