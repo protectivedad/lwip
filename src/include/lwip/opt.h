@@ -255,7 +255,7 @@
  * already use it.
  */
 #if !defined MEM_LIBC_MALLOC || defined __DOXYGEN__
-#define MEM_LIBC_MALLOC                 0
+#define MEM_LIBC_MALLOC                 1
 #endif
 
 /**
@@ -268,7 +268,7 @@
  * not only for internal pools defined in memp_std.h)!
  */
 #if !defined MEMP_MEM_MALLOC || defined __DOXYGEN__
-#define MEMP_MEM_MALLOC                 0
+#define MEMP_MEM_MALLOC                 1
 #endif
 
 /**
@@ -529,7 +529,7 @@
  * (only needed if you use the sequential API, like api_lib.c)
  */
 #if !defined MEMP_NUM_NETCONN || defined __DOXYGEN__
-#define MEMP_NUM_NETCONN                8
+#define MEMP_NUM_NETCONN                4
 #endif
 
 /**
@@ -979,7 +979,7 @@
  * LWIP_AUTOIP==1: Enable AUTOIP module.
  */
 #if !defined LWIP_AUTOIP || defined __DOXYGEN__
-#define LWIP_AUTOIP                     1 //Realtek modified (0->1)
+#define LWIP_AUTOIP                     0
 #endif
 #if !LWIP_IPV4
 /* disable AUTOIP when IPv4 is disabled */
@@ -1097,7 +1097,7 @@
 
 /** DNS maximum number of entries to maintain locally. */
 #if !defined DNS_TABLE_SIZE || defined __DOXYGEN__
-#define DNS_TABLE_SIZE                  4
+#define DNS_TABLE_SIZE                  2
 #endif
 
 /** DNS maximum host name length supported in the name table. */
@@ -2437,7 +2437,7 @@
  * LWIP_IPV6_FRAG==1: Fragment outgoing IPv6 packets that are too big.
  */
 #if !defined LWIP_IPV6_FRAG || defined __DOXYGEN__
-#define LWIP_IPV6_FRAG                  1
+#define LWIP_IPV6_FRAG                  0
 #endif
 
 /**
