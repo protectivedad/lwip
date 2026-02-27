@@ -50,7 +50,7 @@
 #include "lwip/sys.h"
 #include "lwip/tcpip.h"
 #include "lwip/icmp.h"
-#include "lwip/lwip_timers.h"
+#include "lwip/timeouts.h"
 #include "netif/etharp.h"
 #include "err.h"
 #include "ethernetif.h"

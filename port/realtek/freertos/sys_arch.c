@@ -39,7 +39,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
-#include "lwip/lwip_timers.h"
+#include "lwip/timeouts.h"
 #include "autoconf.h"
 #include "tcm_heap.h"
 
